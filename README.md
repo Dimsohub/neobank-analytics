@@ -59,7 +59,7 @@ Here is what the data actually showed:
 
 ## 🚀 Live Demo & Dashboards
 *(Note: The Streamlit app is deployed live! Click the link below)*
-👉 **[Live Streamlit App](https://your-streamlit-link-here.streamlit.app/)**
+👉 **[Live Streamlit App](https://neobank-analytics.streamlit.app/)**
 
 ### Lightdash (Metrics-as-Code)
 ![Executive Overview](assets/lightdash_executive.png)
