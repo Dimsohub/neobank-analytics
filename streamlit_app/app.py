@@ -36,7 +36,7 @@ with tab1:
     col2.metric("Total Transactions", f"{kpi_data['tx_count'][0]:,.0f}")
     col3.metric("Avg Daily Active Users", f"{kpi_data['dau'][0]:,.0f}")
     
-    # TTV Chart (Filtered to stop at March 2026)
+    # TTV Chart
     ttv_data = con.execute("""
         SELECT date_trunc('month', transaction_date) as month, sum(total_volume_usd) as volume
         FROM main.mart_executive_daily
@@ -52,12 +52,24 @@ with tab1:
     # Cohort Heatmap
     st.subheader("Cohort Retention Matrix (%)")
     cohort_df = con.execute("""
-        SELECT strftime(cohort_month, '%Y-%m') as cohort_month, month_0, month_1, month_2, month_3, month_4, month_5, month_6 
+        SELECT strftime(cohort_month, '%Y-%m') AS cohort_month, 
+               month_0, month_1, month_2, month_3, month_4, month_5, month_6 
         FROM main.mart_cohort_matrix 
         ORDER BY cohort_month
     """).fetchdf()
     
-    cohort_df.columns = ['Cohort', 'Month 0 (Start)', 'Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6']
+    # Safe renaming using dictionary
+    cohort_df = cohort_df.rename(columns={
+        'cohort_month': 'Cohort',
+        'month_0': 'Month 0 (Start)',
+        'month_1': 'Month 1',
+        'month_2': 'Month 2',
+        'month_3': 'Month 3',
+        'month_4': 'Month 4',
+        'month_5': 'Month 5',
+        'month_6': 'Month 6'
+    })
+    
     cohort_matrix = cohort_df.set_index('Cohort')
     fig_cohort = px.imshow(cohort_matrix, text_auto=True, aspect="auto", 
                            color_continuous_scale='Blues',
@@ -97,7 +109,7 @@ with tab3:
     
     col3, col4 = st.columns(2)
     
-    # Stacked Bar Chart: Declined & Blocked (Renamed labels)
+    # Declined & Blocked
     status_data = con.execute("""
         SELECT 
             date_trunc('month', transaction_date) as month, 
@@ -121,10 +133,11 @@ with tab3:
     fig_status.update_xaxes(tickformat="%Y-%m")
     col3.plotly_chart(fig_status, use_container_width=True)
 
-    # Fraud Rate Trend (Exact same data and color as Lightdash)
+    # Fraud Rate Trend
     fraud_trend = con.execute("""
-        SELECT date_trunc('month', transaction_date) as month, 
-               (sum(fraud_transactions)::float / sum(total_transactions)) * 100 as fraud_rate
+        SELECT 
+            date_trunc('month', transaction_date) as month, 
+            avg(true_fraud_rate_pct) as fraud_rate
         FROM main.mart_fraud_rate_trend
         WHERE transaction_date > '2024-09-30' AND transaction_date <= '2026-03-31'
         GROUP BY 1 
@@ -136,17 +149,15 @@ with tab3:
                        labels={'month': 'Transaction date (Month)', 'fraud_rate': 'Fraud Rate (%)'},
                        text_auto='.2f')
     
-    # Set to Dark Blue to match Lightdash
     fig_fraud.update_traces(marker_color='#1E3A8A', textposition='outside')
-    fig_fraud.update_xaxes(tickformat="%Y-%m")
-    # Add padding for labels
+    fig_fraud.update_xaxes(tickformat="%Y-%m", tickmode='array', tickvals=fraud_trend['month'], tickangle=-45)
     fig_fraud.update_layout(yaxis_range=[0, max(fraud_trend['fraud_rate']) * 1.2]) 
     col4.plotly_chart(fig_fraud, use_container_width=True)
 
     st.subheader("Risk Anomalies")
     col5, col6 = st.columns(2)
     
-    # Impossible Travel Table
+    # Impossible Travel
     geo_df = con.execute("""
         SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
                user_primary_country as "Home Country", transaction_country as "Transaction Country", 
@@ -157,7 +168,7 @@ with tab3:
     col5.markdown("**Impossible Travel (Top 15)**")
     col5.dataframe(geo_df, use_container_width=True, hide_index=True)
     
-    # Velocity Anomalies Table
+    # Velocity Anomalies
     vel_df = con.execute("""
         SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
                tx_count_10min as "Tx Count (10 min)", is_fraud_flag as "Fraud Flag"
