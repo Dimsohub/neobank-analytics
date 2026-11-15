@@ -16,6 +16,7 @@ I intentionally chose a modern "Data-as-Code" stack:
 *   **Transformation:** **dbt (Data Build Tool)**. I built a proper Staging -> Marts architecture (Star Schema). All business metrics are defined in `schema.yml` using the *Metrics-as-Code* approach.
 *   **BI Layer:** **Lightdash**. Because it connects directly to dbt, ensuring a single source of truth for all metrics.
 *   **Data App:** **Streamlit**. I used this to build a fully interactive Python dashboard, avoiding the UI bugs of self-hosted Lightdash.
+  
 
 ## 📂 Project Structure
 ```text
