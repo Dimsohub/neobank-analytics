@@ -1,0 +1,8 @@
+FROM lightdash/lightdash:latest
+
+USER root
+
+# install dbt-duckdb
+RUN pip install "dbt-core==1.12.4" "dbt-duckdb==1.11.0" "duckdb==1.5.6"
+
+USER node

@@ -1,0 +1,672 @@
+version: 2
+
+models:
+  - name: mart_executive_daily
+    columns:
+      - name: transaction_date
+        label: "Date"
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: total_volume_usd
+        label: "Total Volume (USD)"
+        meta:
+          metrics:
+            total_volume:
+              type: sum
+              label: "Total Volume (USD)"
+              sql: "${TABLE}.total_volume_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_revenue_usd
+        label: "Total Revenue (USD)"
+        meta:
+          metrics:
+            total_revenue:
+              type: sum
+              label: "Total Revenue (USD)"
+              sql: "${TABLE}.total_revenue_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: daily_active_users
+        label: "Daily Active Users"
+        meta:
+          metrics:
+            active_users:
+              type: average
+              label: "Average Daily Active Users"
+              sql: "${TABLE}.daily_active_users"
+              format: number
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: avg_transaction_value_usd
+        label: "Avg Transaction Value (USD)"
+        meta:
+          metrics:
+            avg_tx_value:
+              type: average
+              label: "Avg Transaction Value (USD)"
+              sql: "${TABLE}.avg_transaction_value_usd"
+              format: usd
+              round: 2
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_transactions
+        label: "Total Transactions"
+        meta:
+          metrics:
+            metric_total_transactions:
+              type: sum
+              label: "Total Transactions"
+              sql: "${TABLE}.total_transactions"
+              format: number
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: fraud_transactions
+        label: "Fraud Transactions"
+        meta:
+          metrics:
+            metric_fraud_transactions:
+              type: sum
+              label: "Fraud Transactions"
+              sql: "${TABLE}.fraud_transactions"
+              format: number
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: blocked_fraud_volume_usd
+        label: "Blocked Fraud Volume (USD)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: fct_transactions
+    columns:
+      - name: transaction_id
+        label: "Transaction ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: user_id
+        label: "User ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_at
+        label: "Transaction Time"
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: amount_usd
+        label: "Amount (USD)"
+        meta:
+          metrics:
+            metric_amount_usd:
+              type: sum
+              label: "Total Volume (USD)"
+              sql: "${TABLE}.amount_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: revenue_usd
+        label: "Revenue (USD)"
+        meta:
+          metrics:
+            metric_revenue_usd:
+              type: sum
+              label: "Revenue (USD)"
+              sql: "${TABLE}.revenue_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: currency
+        label: "Currency"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: transaction_type
+        label: "Transaction Type"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: category
+        label: "Category"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: merchant
+        label: "Merchant"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: device_type
+        label: "Device Type"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: transaction_country
+        label: "Transaction Country"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: status
+        label: "Status"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: is_fraud_flag
+        label: "Fraud Flag"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: user_segment
+        label: "User Segment"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: user_primary_country
+        label: "Home Country"
+        config:
+          meta:
+            dimension:
+              type: string
+
+  - name: dim_users
+    columns:
+      - name: user_id
+        label: "User ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: segment
+        label: "Segment"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: country
+        label: "Country"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: spend_tier
+        label: "Spend Tier"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: cohort_month
+        label: "Cohort Month"
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: created_at
+        label: "Created At"
+        config:
+          meta:
+            dimension:
+              type: timestamp
+
+  - name: mart_customer_segmentation
+    columns:
+      - name: user_id
+        label: "User ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: segment
+        label: "User Segment"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: value_tier
+        label: "Value Tier"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: total_spend_usd
+        label: "Total Spend (USD)"
+        meta:
+          metrics:
+            metric_segment_spend:
+              type: sum
+              label: "Total Spend (USD)"
+              sql: "${TABLE}.total_spend_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_transactions
+        label: "Total Transactions"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_spend_by_category
+    columns:
+      - name: category
+        label: "Category"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: user_segment
+        label: "User Segment"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: total_transactions
+        label: "Total Transactions"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_spend_usd
+        label: "Total Spend (USD)"
+        meta:
+          metrics:
+            metric_total_spend:
+              type: sum
+              label: "Total Spend (USD)"
+              sql: "${TABLE}.total_spend_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: avg_transaction_value_usd
+        label: "Avg Transaction Value (USD)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_subscriptions
+    columns:
+      - name: merchant
+        label: "Merchant"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: user_segment
+        label: "User Segment"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: total_subscriptions
+        label: "Total Subscriptions"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: unique_subscribers
+        label: "Unique Subscribers"
+        meta:
+          metrics:
+            metric_unique_subscribers:
+              type: sum
+              label: "Unique Subscribers"
+              sql: "${TABLE}.unique_subscribers"
+              format: number
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_subscription_volume_usd
+        label: "Subscription Volume (USD)"
+        meta:
+          metrics:
+            metric_subscription_volume:
+              type: sum
+              label: "Subscription Volume (USD)"
+              sql: "${TABLE}.total_subscription_volume_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: avg_monthly_fee_usd
+        label: "Avg Monthly Fee (USD)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_user_retention
+    columns:
+      - name: cohort_month
+        label: "Cohort Month"
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: month_offset
+        label: "Month Offset"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: active_users
+        label: "Active Users"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_cohort_users
+        label: "Total Cohort Users"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: retention_rate_pct
+        label: "Retention Rate (%)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_fraud_overview
+    columns:
+      - name: transaction_date
+        label: "Date"
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: status
+        label: "Status"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: transaction_count
+        label: "Transaction Count"
+        meta:
+          metrics:
+            metric_tx_count:
+              type: sum
+              label: "Transaction Count"
+              sql: "${TABLE}.transaction_count"
+              format: number
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: total_volume_usd
+        label: "Total Volume (USD)"
+        meta:
+          metrics:
+            metric_fraud_volume:
+              type: sum
+              label: "Total Volume (USD)"
+              sql: "${TABLE}.total_volume_usd"
+              format: usd
+              round: 0
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: fraud_rate_pct
+        label: "Fraud Rate (%)"
+        meta:
+          metrics:
+            avg_fraud_rate:
+              type: average
+              label: "Fraud Rate (%)"
+              sql: "${TABLE}.fraud_rate_pct"
+              format: number
+              round: 2
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_fraud_geo_anomalies
+    columns:
+      - name: transaction_id
+        label: "Transaction ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: user_id
+        label: "User ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_at
+        label: "Transaction Time"
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: amount_usd
+        label: "Amount (USD)"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_country
+        label: "Transaction Country"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: user_primary_country
+        label: "Home Country"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: prev_country
+        label: "Previous Country"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: prev_transaction_at
+        label: "Previous Transaction Time"
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: is_fraud_flag
+        label: "Fraud Flag"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: status
+        label: "Status"
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: minutes_since_last_tx
+        label: "Time Since Last Tx (Min)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_fraud_velocity
+    columns:
+      - name: transaction_id
+        label: "Transaction ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: user_id
+        label: "User ID"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_at
+        label: "Transaction Time"
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: amount_usd
+        label: "Amount (USD)"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: is_fraud_flag
+        label: "Fraud Flag"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: tx_count_10min
+        label: "Tx Count (10 min)"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_cohort_matrix
+    columns:
+      - name: cohort_month
+        label: "Cohort"
+        config:
+          meta:
+            dimension:
+              type: date
+      - name: total_users
+        label: "Total Users"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_0
+        label: "Month 0 (Start)"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_1
+        label: "Month 1"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_2
+        label: "Month 2"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_3
+        label: "Month 3"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_4
+        label: "Month 4"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_5
+        label: "Month 5"
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: month_6
+        label: "Month 6"
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: mart_fraud_rate_trend
+    columns:
+      - name: transaction_date
+        label: "Date"
+        config:
+          meta:
+            dimension:
+              type: date
+        description: ""
+      - name: total_transactions
+        label: "Total Transactions"
+        config:
+          meta:
+            dimension:
+              type: number
+        description: ""
+      - name: fraud_transactions
+        label: "Fraud Transactions"
+        config:
+          meta:
+            dimension:
+              type: number
+        description: ""
+      - name: true_fraud_rate_pct
+        label: "Fraud Rate (%)"
+        config:
+          meta:
+            dimension:
+              type: number
+        description: ""

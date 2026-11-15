@@ -1,0 +1,27 @@
+# Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+
+# Data and database files (we don't commit large CSVs or local DBs)
+data/raw/*.csv
+data/processed/*.csv
+*.duckdb
+*.duckdb.wal
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Lightdash
+.env
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Lightdash env
+lightdash/.env
+
+# Data
+data/processed/*.duckdb

@@ -1,0 +1,116 @@
+version: 2
+
+models:
+  - name: stg_users
+    columns:
+      - name: user_id
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: created_at
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: segment
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: country
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: spend_tier
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+
+  - name: stg_transactions
+    columns:
+      - name: transaction_id
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: user_id
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_at
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: timestamp
+      - name: amount_usd
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: currency
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: converted_amount_usd
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
+      - name: transaction_type
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: category
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: merchant
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: device_type
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: country
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: status
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: string
+      - name: is_fraud_flag
+        description: ""
+        config:
+          meta:
+            dimension:
+              type: number
