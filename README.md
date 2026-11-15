@@ -40,6 +40,7 @@ neobank-analytics/
 ├── .gitignore
 ├── README.md
 └── requirements.txt
+```
 
 ## 🧠 Real Engineering Challenges I Solved
 Building this wasn't just writing `SELECT *`. I ran into realistic data problems and fixed them in code:
