@@ -3,6 +3,12 @@ neobank:
   outputs:
     dev:
       type: duckdb
-      path: "md:neobank?motherduck_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRpbXNvbWFpbEBnbWFpbC5jb20iLCJtZFJlZ2lvbiI6ImF3cy1ldS1jZW50cmFsLTEiLCJzZXNzaW9uIjoiZGltc29fZGltc29tYWlsX2I2NGI5ZjgxLTNmOTQtNDA4Mi04ZDA2LTUxMTAxMDljZjQ3NSIsInBhdCI6IkpFZjdvbktNVmFjdHpzN1JUWmFlUDRNZVJFaGhCa1luU1hRSW9YSkJhSDQiLCJ1c2VySWQiOiJiNjRiOWY4MS0zZjk0LTQwODItOGQwNi01MTEwMTA5Y2Y0NzUiLCJpc3MiOiJtZF9wYXQiLCJyZWFkT25seSI6ZmFsc2UsInRva2VuVHlwZSI6InJlYWRfd3JpdGUiLCJpYXQiOjE3OTQ0MDAwMjd9.zXADhkhfdxS-kBefxr2tNM27adL-9HeRVEdOzQryh9w"
+      path: "md:neobank?motherduck_token={{ env_var('MOTHERDUCK_TOKEN') }}"
+      schema: main
+      threads: 4
+
+    ci:
+      type: duckdb
+      path: "md:neobank_ci?motherduck_token={{ env_var('MOTHERDUCK_TOKEN') }}"
       schema: main
       threads: 4
