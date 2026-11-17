@@ -83,3 +83,5 @@ uvicorn==0.54.0
 watchdog==6.0.0
 websockets==17.4
 zipp==4.1.2
+scikit-learn
+joblib

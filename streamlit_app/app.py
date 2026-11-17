@@ -177,3 +177,64 @@ with tab3:
     """).fetchdf()
     col6.markdown("**Velocity Anomalies (Top 15)**")
     col6.dataframe(vel_df, use_container_width=True, hide_index=True)
+
+    # ==========================================
+    # MACHINE LEARNING FRAUD DETECTION
+    # ==========================================
+    st.markdown("---")
+    st.subheader("🤖 ML Fraud Detection Simulator")
+    st.markdown("Adjust the threshold to see the trade-off between catching fraud and blocking legitimate customers.")
+    
+    import joblib
+    import os
+    import numpy as np
+    
+    # Load the model
+    model_path = os.path.join(os.path.dirname(__file__), 'fraud_model.pkl')
+    if os.path.exists(model_path):
+        model = joblib.load(model_path)
+        
+        # Fetch a sample of recent transactions to score
+        sample_data = con.execute("""
+            SELECT transaction_id, amount_usd, is_fraud_flag
+            FROM main.fct_transactions
+            WHERE transaction_at <= '2026-03-31'
+            USING SAMPLE 500 ROWS
+        """).fetchdf()
+        
+        # Predict probabilities
+        X_sim = sample_data[['amount_usd']]
+        probabilities = model.predict_proba(X_sim)[:, 1]
+        sample_data['fraud_probability'] = probabilities
+        
+        # UI Slider
+        threshold = st.slider("Fraud Probability Threshold (%)", min_value=0, max_value=100, value=50, step=5) / 100.0
+        
+        # Apply threshold
+        sample_data['is_blocked'] = sample_data['fraud_probability'] >= threshold
+        
+        # Calculate metrics
+        caught_fraud = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 1)])
+        missed_fraud = len(sample_data[(sample_data['is_blocked'] == False) & (sample_data['is_fraud_flag'] == 1)])
+        false_positives = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 0)])
+        
+        # Display metrics
+        col_ml1, col_ml2, col_ml3 = st.columns(3)
+        col_ml1.metric("Fraud Caught", f"{caught_fraud}", delta="Good", delta_color="normal")
+        col_ml2.metric("Fraud Missed", f"{missed_fraud}", delta="Bad", delta_color="inverse")
+        col_ml3.metric("Legit Customers Blocked", f"{false_positives}", delta="False Positives", delta_color="off")
+        
+        # Plot the results
+        fig_ml = px.scatter(
+            sample_data, 
+            x='amount_usd', 
+            y='fraud_probability', 
+            color='is_blocked',
+            symbol='is_fraud_flag',
+            title=f"Transaction Amount vs. ML Fraud Probability (Threshold: {threshold*100}%)",
+            labels={'amount_usd': 'Amount (USD)', 'fraud_probability': 'Fraud Probability', 'is_blocked': 'Blocked by ML'},
+            color_discrete_map={True: '#D32F2F', False: '#1E3A8A'}
+        )
+        st.plotly_chart(fig_ml, use_container_width=True)
+    else:
+        st.warning("Model file not found. Please run the training script first.")
