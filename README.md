@@ -2,13 +2,20 @@
 
 This is a personal data engineering & analytics project where I built an end-to-end pipeline for a fictional neobank. My goal was to simulate real-world data architecture, starting from raw Python data generation to building a governed metrics layer and interactive dashboards.
 
+## 🛠️ Tech Stack & Skills
+*   **Languages & Libraries:** Python (Pandas, NumPy, Scikit-learn), SQL (Advanced Window Functions)
+*   **Data Transformation:** dbt (Data Build Tool) - *Staging, Marts, Incremental Models, Data Quality Tests*
+*   **Data Warehouse:** MotherDuck / DuckDB
+*   **BI & Visualization:** Lightdash (Metrics-as-Code), Streamlit, Plotly
+*   **DevOps & Orchestration:** GitHub Actions (CI/CD, Cron Jobs), Git, Docker
+
 ## 💡 Why I built this
 Neobanks process millions of transactions. The business questions I wanted to answer with this data were:
 1. **Executive:** How is our transaction volume (TTV) and revenue growing month over month?
 2. **Product:** Which customer segments drive the most value, and how well do we retain them (Cohort Analysis)?
 3. **Risk:** How do we catch fraud patterns like "Impossible Travel" or "Velocity" before the money leaves the bank?
 
-## 🛠️ The Stack & Architecture
+## 🏗️ Data Architecture & Pipeline Flow
 I intentionally chose a modern "Data-as-Code" stack:
 
 *   **Data Generation:** Python (`Faker`, `NumPy`). I generated 50,000 users and 1.5M transactions.
