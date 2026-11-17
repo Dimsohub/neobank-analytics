@@ -27,3 +27,4 @@ lightdash/.env
 data/processed/*.duckdb
 
 *.pkl
+.user.yml

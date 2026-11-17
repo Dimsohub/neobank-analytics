@@ -16,6 +16,13 @@ I intentionally chose a modern "Data-as-Code" stack:
 *   **Transformation:** **dbt (Data Build Tool)**. I built a proper Staging -> Marts architecture (Star Schema). All business metrics are defined in `schema.yml` using the *Metrics-as-Code* approach.
 *   **BI Layer:** **Lightdash**. Because it connects directly to dbt, ensuring a single source of truth for all metrics.
 *   **Data App:** **Streamlit**. I used this to build a fully interactive Python dashboard, avoiding the UI bugs of self-hosted Lightdash.
+
+## 🚀 Production-Grade Features (Senior Level)
+This project goes beyond basic analytics and includes production-ready engineering practices:
+
+1. **CI/CD Data Quality Gates (GitHub Actions):** Every push triggers an automated dbt build and test pipeline on a dedicated CI database (`neobank_ci`). Bad data (duplicates, nulls) is blocked from reaching production.
+2. **Machine Learning Fraud Detection:** A Random Forest classifier (`scikit-learn`) predicts the probability of fraud for each transaction. The model is integrated into the Streamlit app with an interactive threshold slider to simulate the trade-off between catching fraud and false positives.
+3. **Automated Orchestration:** A scheduled GitHub Actions workflow (`daily_pipeline.yml`) runs the entire dbt pipeline automatically every night at 02:00 UTC, simulating a real production environment.
   
 
 ## 📂 Project Structure
