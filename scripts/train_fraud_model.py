@@ -29,7 +29,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 print("Training Random Forest model...")
 # We use class_weight='balanced' because fraud is only 2.5% of the data
-model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
+model = RandomForestClassifier(n_estimators=10, max_depth=5, class_weight='balanced', random_state=42)
 model.fit(X_train, y_train)
 
 # Evaluate
