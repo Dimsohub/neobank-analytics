@@ -12,12 +12,19 @@ MOTHERDUCK_TOKEN = st.secrets["MOTHERDUCK_TOKEN"]
 
 @st.cache_resource
 def get_connection():
-    return duckdb.connect(f"md:neobank?motherduck_token={MOTHERDUCK_TOKEN}")
+    try:
+        return duckdb.connect(f"md:neobank?motherduck_token={MOTHERDUCK_TOKEN}")
+    except Exception as e:
+        st.error(f"Failed to connect to database: {e}")
+        return None
 
 con = get_connection()
 
 st.title("🏦 Neobank Transaction & Risk Analytics")
 st.markdown("Interactive dashboard built with Python, dbt, and MotherDuck.")
+
+if con is None:
+    st.stop()
 
 tab1, tab2, tab3 = st.tabs(["📊 Executive Overview", "👥 Customer Behavior", "🛡️ Fraud & Risk Control"])
 
@@ -28,232 +35,237 @@ with tab1:
     st.header("Executive Overview")
     
     col1, col2, col3 = st.columns(3)
-    kpi_data = con.execute("""
-        SELECT sum(total_revenue_usd) as revenue, sum(total_transactions) as tx_count, avg(daily_active_users) as dau
-        FROM main.mart_executive_daily
-        WHERE transaction_date <= '2026-03-31'
-    """).fetchdf()
-    
-    if not kpi_data.empty:
-        col1.metric("Total Revenue (USD)", f"${kpi_data['revenue'][0]:,.0f}")
-        col2.metric("Total Transactions", f"{kpi_data['tx_count'][0]:,.0f}")
-        col3.metric("Avg Daily Active Users", f"{kpi_data['dau'][0]:,.0f}")
-    else:
-        st.warning("No KPI data available.")
+    try:
+        kpi_data = con.execute("""
+            SELECT sum(total_revenue_usd) as revenue, sum(total_transactions) as tx_count, avg(daily_active_users) as dau
+            FROM main.mart_executive_daily
+            WHERE transaction_date <= '2026-03-31'
+        """).fetchdf()
+        
+        if isinstance(kpi_data, pd.DataFrame) and not kpi_data.empty:
+            col1.metric("Total Revenue (USD)", f"${kpi_data['revenue'][0]:,.0f}")
+            col2.metric("Total Transactions", f"{kpi_data['tx_count'][0]:,.0f}")
+            col3.metric("Avg Daily Active Users", f"{kpi_data['dau'][0]:,.0f}")
+        else:
+            st.warning("No KPI data available.")
+    except Exception as e:
+        st.warning("Could not load KPI data.")
     
     # TTV Chart
-    ttv_data = con.execute("""
-        SELECT date_trunc('month', transaction_date) as month, sum(total_volume_usd) as volume
-        FROM main.mart_executive_daily
-        WHERE transaction_date <= '2026-03-31'
-        GROUP BY 1 ORDER BY 1
-    """).fetchdf()
-    
-    if not ttv_data.empty:
-        fig_ttv = px.line(ttv_data, x='month', y='volume', 
-                          title="Total Transaction Volume (USD)",
-                          labels={'month': 'Date', 'volume': 'Volume (USD)'})
-        fig_ttv.update_traces(line_color='#1f77b4', line_width=3)
-        st.plotly_chart(fig_ttv, use_container_width=True)
-    else:
-        st.warning("No TTV data available.")
+    try:
+        ttv_data = con.execute("""
+            SELECT date_trunc('month', transaction_date) as month, sum(total_volume_usd) as volume
+            FROM main.mart_executive_daily
+            WHERE transaction_date <= '2026-03-31'
+            GROUP BY 1 ORDER BY 1
+        """).fetchdf()
+        
+        if isinstance(ttv_data, pd.DataFrame) and not ttv_data.empty:
+            fig_ttv = px.line(ttv_data, x='month', y='volume', 
+                              title="Total Transaction Volume (USD)",
+                              labels={'month': 'Date', 'volume': 'Volume (USD)'})
+            fig_ttv.update_traces(line_color='#1f77b4', line_width=3)
+            st.plotly_chart(fig_ttv, use_container_width=True)
+        else:
+            st.warning("No TTV data available.")
+    except Exception:
+        st.warning("Could not load TTV chart.")
 
     # Cohort Heatmap
     st.subheader("Cohort Retention Matrix (%)")
-    cohort_df = con.execute("""
-        SELECT strftime(cohort_month, '%Y-%m') AS cohort_month, 
-               month_0, month_1, month_2, month_3, month_4, month_5, month_6 
-        FROM main.mart_cohort_matrix 
-        ORDER BY cohort_month
-    """).fetchdf()
-    
-    if not cohort_df.empty:
-        cohort_df = cohort_df.rename(columns={
-            'cohort_month': 'Cohort',
-            'month_0': 'Month 0 (Start)',
-            'month_1': 'Month 1',
-            'month_2': 'Month 2',
-            'month_3': 'Month 3',
-            'month_4': 'Month 4',
-            'month_5': 'Month 5',
-            'month_6': 'Month 6'
-        })
-        cohort_matrix = cohort_df.set_index('Cohort')
-        fig_cohort = px.imshow(cohort_matrix, text_auto=True, aspect="auto", 
-                               color_continuous_scale='Blues',
-                               labels=dict(x="Month Offset", y="Cohort", color="Retention (%)"))
-        st.plotly_chart(fig_cohort, use_container_width=True)
-    else:
-        st.warning("No cohort data available.")
+    try:
+        cohort_df = con.execute("""
+            SELECT strftime(cohort_month, '%Y-%m') AS cohort_month, 
+                   month_0, month_1, month_2, month_3, month_4, month_5, month_6 
+            FROM main.mart_cohort_matrix 
+            ORDER BY cohort_month
+        """).fetchdf()
+        
+        if isinstance(cohort_df, pd.DataFrame) and not cohort_df.empty:
+            cohort_df = cohort_df.rename(columns={
+                'cohort_month': 'Cohort',
+                'month_0': 'Month 0 (Start)', 'month_1': 'Month 1',
+                'month_2': 'Month 2', 'month_3': 'Month 3',
+                'month_4': 'Month 4', 'month_5': 'Month 5', 'month_6': 'Month 6'
+            })
+            cohort_matrix = cohort_df.set_index('Cohort')
+            fig_cohort = px.imshow(cohort_matrix, text_auto=True, aspect="auto", 
+                                   color_continuous_scale='Blues',
+                                   labels=dict(x="Month Offset", y="Cohort", color="Retention (%)"))
+            st.plotly_chart(fig_cohort, use_container_width=True)
+        else:
+            st.warning("No cohort data available.")
+    except Exception:
+        st.warning("Could not load Cohort matrix.")
 
 # ==========================================
 # TAB 2: CUSTOMER BEHAVIOR
 # ==========================================
 with tab2:
     st.header("Customer Behavior & Unit Economics")
-    
     col1, col2 = st.columns(2)
     
     # Category Donut
-    cat_data = con.execute("SELECT category, sum(total_spend_usd) as spend FROM main.mart_spend_by_category GROUP BY 1 ORDER BY spend DESC").fetchdf()
-    if not cat_data.empty:
-        fig_pie = px.pie(cat_data, names='category', values='spend', 
-                         title="Total Spend (USD) by Category", hole=0.4)
-        col1.plotly_chart(fig_pie, use_container_width=True)
-    else:
-        col1.warning("No data available for categories.")
+    try:
+        cat_data = con.execute("SELECT category, sum(total_spend_usd) as spend FROM main.mart_spend_by_category GROUP BY 1 ORDER BY spend DESC").fetchdf()
+        if isinstance(cat_data, pd.DataFrame) and not cat_data.empty:
+            fig_pie = px.pie(cat_data, names='category', values='spend', title="Total Spend (USD) by Category", hole=0.4)
+            col1.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            col1.warning("No data available for categories.")
+    except Exception:
+        col1.warning("Could not load category chart.")
     
     # Value Tier Donut
-    seg_data = con.execute("SELECT value_tier, sum(total_spend_usd) as spend FROM main.mart_customer_segmentation GROUP BY 1 ORDER BY spend DESC").fetchdf()
-    if not seg_data.empty:
-        fig_seg = px.pie(seg_data, names='value_tier', values='spend', 
-                         title="Total Spend (USD) by Value Tier", hole=0.4)
-        col2.plotly_chart(fig_seg, use_container_width=True)
-    else:
-        col2.warning("No data available for value tiers.")
+    try:
+        seg_data = con.execute("SELECT value_tier, sum(total_spend_usd) as spend FROM main.mart_customer_segmentation GROUP BY 1 ORDER BY spend DESC").fetchdf()
+        if isinstance(seg_data, pd.DataFrame) and not seg_data.empty:
+            fig_seg = px.pie(seg_data, names='value_tier', values='spend', title="Total Spend (USD) by Value Tier", hole=0.4)
+            col2.plotly_chart(fig_seg, use_container_width=True)
+        else:
+            col2.warning("No data available for value tiers.")
+    except Exception:
+        col2.warning("Could not load tier chart.")
 
     # Subscriptions Bar Chart
     st.subheader("Subscription Volume (USD) by Merchant")
-    sub_data = con.execute("SELECT merchant, sum(total_subscription_volume_usd) as volume FROM main.mart_subscriptions GROUP BY 1 ORDER BY volume DESC LIMIT 15").fetchdf()
-    if not sub_data.empty:
-        fig_sub = px.bar(sub_data, x='volume', y='merchant', orientation='h',
-                         labels={'merchant': 'Merchant', 'volume': 'Volume (USD)'})
-        fig_sub.update_layout(yaxis={'categoryorder':'total ascending'}, height=500)
-        st.plotly_chart(fig_sub, use_container_width=True)
-    else:
-        st.warning("No data available for subscriptions.")
+    try:
+        sub_data = con.execute("SELECT merchant, sum(total_subscription_volume_usd) as volume FROM main.mart_subscriptions GROUP BY 1 ORDER BY volume DESC LIMIT 15").fetchdf()
+        if isinstance(sub_data, pd.DataFrame) and not sub_data.empty:
+            fig_sub = px.bar(sub_data, x='volume', y='merchant', orientation='h', labels={'merchant': 'Merchant', 'volume': 'Volume (USD)'})
+            fig_sub.update_layout(yaxis={'categoryorder':'total ascending'}, height=500)
+            st.plotly_chart(fig_sub, use_container_width=True)
+        else:
+            st.warning("No data available for subscriptions.")
+    except Exception:
+        st.warning("Could not load subscriptions chart.")
 
 # ==========================================
 # TAB 3: FRAUD & RISK CONTROL
 # ==========================================
 with tab3:
     st.header("Fraud & Risk Control")
-    
     col3, col4 = st.columns(2)
     
     # Declined & Blocked
-    status_data = con.execute("""
-        SELECT 
-            date_trunc('month', transaction_date) as month, 
-            CASE 
-                WHEN status = 'Blocked_Fraud' THEN 'Blocked Fraud'
-                WHEN status = 'Failed_Insufficient_Funds' THEN 'Insufficient Funds'
-                ELSE status 
-            END as status_label, 
-            sum(transaction_count) as tx_count
-        FROM main.mart_fraud_overview
-        WHERE status IN ('Blocked_Fraud', 'Failed_Insufficient_Funds')
-          AND transaction_date > '2024-09-30'
-          AND transaction_date <= '2026-03-31'
-        GROUP BY 1, 2 ORDER BY 1
-    """).fetchdf()
-    
-    if not status_data.empty:
-        fig_status = px.bar(status_data, x='month', y='tx_count', color='status_label', barmode='stack',
-                            title="Declined & Blocked Transactions (Monthly)",
-                            labels={'month': 'Month', 'tx_count': 'Transaction Count', 'status_label': 'Status'},
-                            color_discrete_map={'Blocked Fraud': '#D32F2F', 'Insufficient Funds': '#FFA000'})
-        fig_status.update_xaxes(tickformat="%Y-%m")
-        col3.plotly_chart(fig_status, use_container_width=True)
-    else:
-        col3.warning("No status data available.")
+    try:
+        status_data = con.execute("""
+            SELECT date_trunc('month', transaction_date) as month, 
+                CASE WHEN status = 'Blocked_Fraud' THEN 'Blocked Fraud' WHEN status = 'Failed_Insufficient_Funds' THEN 'Insufficient Funds' ELSE status END as status_label, 
+                sum(transaction_count) as tx_count
+            FROM main.mart_fraud_overview
+            WHERE status IN ('Blocked_Fraud', 'Failed_Insufficient_Funds') AND transaction_date > '2024-09-30' AND transaction_date <= '2026-03-31'
+            GROUP BY 1, 2 ORDER BY 1
+        """).fetchdf()
+        
+        if isinstance(status_data, pd.DataFrame) and not status_data.empty:
+            fig_status = px.bar(status_data, x='month', y='tx_count', color='status_label', barmode='stack',
+                                title="Declined & Blocked Transactions (Monthly)",
+                                labels={'month': 'Month', 'tx_count': 'Transaction Count', 'status_label': 'Status'},
+                                color_discrete_map={'Blocked Fraud': '#D32F2F', 'Insufficient Funds': '#FFA000'})
+            fig_status.update_xaxes(tickformat="%Y-%m")
+            col3.plotly_chart(fig_status, use_container_width=True)
+        else:
+            col3.warning("No status data available.")
+    except Exception:
+        col3.warning("Could not load status chart.")
 
     # Fraud Rate Trend
-    fraud_trend = con.execute("""
-        SELECT 
-            date_trunc('month', transaction_date) as month, 
-            avg(true_fraud_rate_pct) as fraud_rate
-        FROM main.mart_fraud_rate_trend
-        WHERE transaction_date > '2024-09-30' AND transaction_date <= '2026-03-31'
-        GROUP BY 1 
-        ORDER BY 1
-    """).fetchdf()
-    
-    if not fraud_trend.empty:
-        fig_fraud = px.bar(fraud_trend, x='month', y='fraud_rate', 
-                           title="Overall Fraud Rate Trend (%)", 
-                           labels={'month': 'Transaction date (Month)', 'fraud_rate': 'Fraud Rate (%)'},
-                           text_auto='.2f')
-        fig_fraud.update_traces(marker_color='#1E3A8A', textposition='outside')
-        fig_fraud.update_xaxes(tickformat="%Y-%m", tickmode='array', tickvals=fraud_trend['month'], tickangle=-45)
-        fig_fraud.update_layout(yaxis_range=[0, max(fraud_trend['fraud_rate']) * 1.2]) 
-        col4.plotly_chart(fig_fraud, use_container_width=True)
-    else:
-        col4.warning("No fraud trend data available.")
+    try:
+        fraud_trend = con.execute("""
+            SELECT date_trunc('month', transaction_date) as month, avg(true_fraud_rate_pct) as fraud_rate
+            FROM main.mart_fraud_rate_trend
+            WHERE transaction_date > '2024-09-30' AND transaction_date <= '2026-03-31'
+            GROUP BY 1 ORDER BY 1
+        """).fetchdf()
+        
+        if isinstance(fraud_trend, pd.DataFrame) and not fraud_trend.empty:
+            fig_fraud = px.bar(fraud_trend, x='month', y='fraud_rate', title="Overall Fraud Rate Trend (%)", 
+                               labels={'month': 'Transaction date (Month)', 'fraud_rate': 'Fraud Rate (%)'}, text_auto='.2f')
+            fig_fraud.update_traces(marker_color='#1E3A8A', textposition='outside')
+            fig_fraud.update_xaxes(tickformat="%Y-%m", tickmode='array', tickvals=fraud_trend['month'], tickangle=-45)
+            fig_fraud.update_layout(yaxis_range=[0, max(fraud_trend['fraud_rate']) * 1.2]) 
+            col4.plotly_chart(fig_fraud, use_container_width=True)
+        else:
+            col4.warning("No fraud trend data available.")
+    except Exception:
+        col4.warning("Could not load fraud trend.")
 
     st.subheader("Risk Anomalies")
     col5, col6 = st.columns(2)
     
     # Impossible Travel
-    geo_df = con.execute("""
-        SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
-               user_primary_country as "Home Country", transaction_country as "Transaction Country", 
-               minutes_since_last_tx as "Time Since Last Tx", is_fraud_flag as "Fraud Flag"
-        FROM main.mart_fraud_geo_anomalies 
-        ORDER BY minutes_since_last_tx ASC LIMIT 15
-    """).fetchdf()
-    col5.markdown("**Impossible Travel (Top 15)**")
-    if not geo_df.empty:
-        col5.dataframe(geo_df, use_container_width=True, hide_index=True)
-    else:
-        col5.warning("No anomalies found.")
+    try:
+        geo_df = con.execute("""
+            SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
+                   user_primary_country as "Home Country", transaction_country as "Transaction Country", 
+                   minutes_since_last_tx as "Time Since Last Tx", is_fraud_flag as "Fraud Flag"
+            FROM main.mart_fraud_geo_anomalies ORDER BY minutes_since_last_tx ASC LIMIT 15
+        """).fetchdf()
+        col5.markdown("**Impossible Travel (Top 15)**")
+        if isinstance(geo_df, pd.DataFrame) and not geo_df.empty:
+            col5.dataframe(geo_df, use_container_width=True, hide_index=True)
+        else:
+            col5.warning("No anomalies found.")
+    except Exception:
+        col5.warning("Could not load anomalies.")
     
     # Velocity Anomalies
-    vel_df = con.execute("""
-        SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
-               tx_count_10min as "Tx Count (10 min)", is_fraud_flag as "Fraud Flag"
-        FROM main.mart_fraud_velocity 
-        ORDER BY tx_count_10min DESC LIMIT 15
-    """).fetchdf()
-    col6.markdown("**Velocity Anomalies (Top 15)**")
-    if not vel_df.empty:
-        col6.dataframe(vel_df, use_container_width=True, hide_index=True)
-    else:
-        col6.warning("No anomalies found.")
+    try:
+        vel_df = con.execute("""
+            SELECT user_id as "User ID", transaction_at as "Transaction Time", amount_usd as "Amount (USD)", 
+                   tx_count_10min as "Tx Count (10 min)", is_fraud_flag as "Fraud Flag"
+            FROM main.mart_fraud_velocity ORDER BY tx_count_10min DESC LIMIT 15
+        """).fetchdf()
+        col6.markdown("**Velocity Anomalies (Top 15)**")
+        if isinstance(vel_df, pd.DataFrame) and not vel_df.empty:
+            col6.dataframe(vel_df, use_container_width=True, hide_index=True)
+        else:
+            col6.warning("No anomalies found.")
+    except Exception:
+        col6.warning("Could not load velocity anomalies.")
 
-    # ==========================================
     # MACHINE LEARNING FRAUD DETECTION
-    # ==========================================
     st.markdown("---")
     st.subheader("🤖 ML Fraud Detection Simulator")
     st.markdown("Adjust the threshold to see the trade-off between catching fraud and blocking legitimate customers.")
     
     model_path = os.path.join(os.path.dirname(__file__), 'fraud_model.pkl')
     if os.path.exists(model_path):
-        model = joblib.load(model_path)
-        
-        sample_data = con.execute("""
-            SELECT transaction_id, amount_usd, is_fraud_flag
-            FROM main.fct_transactions
-            WHERE transaction_at <= '2026-03-31'
-            USING SAMPLE 500 ROWS
-        """).fetchdf()
-        
-        if not sample_data.empty:
-            X_sim = sample_data[['amount_usd']]
-            probabilities = model.predict_proba(X_sim)[:, 1]
-            sample_data['fraud_probability'] = probabilities
+        try:
+            model = joblib.load(model_path)
+            sample_data = con.execute("""
+                SELECT transaction_id, amount_usd, is_fraud_flag FROM main.fct_transactions
+                WHERE transaction_at <= '2026-03-31' USING SAMPLE 500 ROWS
+            """).fetchdf()
             
-            threshold = st.slider("Fraud Probability Threshold (%)", min_value=0, max_value=100, value=50, step=5) / 100.0
-            sample_data['is_blocked'] = sample_data['fraud_probability'] >= threshold
-            
-            caught_fraud = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 1)])
-            missed_fraud = len(sample_data[(sample_data['is_blocked'] == False) & (sample_data['is_fraud_flag'] == 1)])
-            false_positives = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 0)])
-            
-            col_ml1, col_ml2, col_ml3 = st.columns(3)
-            col_ml1.metric("Fraud Caught", f"{caught_fraud}", delta="Good", delta_color="normal")
-            col_ml2.metric("Fraud Missed", f"{missed_fraud}", delta="Bad", delta_color="inverse")
-            col_ml3.metric("Legit Customers Blocked", f"{false_positives}", delta="False Positives", delta_color="off")
-            
-            fig_ml = px.scatter(
-                sample_data, x='amount_usd', y='fraud_probability', color='is_blocked', symbol='is_fraud_flag',
-                title=f"Transaction Amount vs. ML Fraud Probability (Threshold: {threshold*100}%)",
-                labels={'amount_usd': 'Amount (USD)', 'fraud_probability': 'Fraud Probability', 'is_blocked': 'Blocked by ML'},
-                color_discrete_map={True: '#D32F2F', False: '#1E3A8A'}
-            )
-            st.plotly_chart(fig_ml, use_container_width=True)
-        else:
-            st.warning("No transaction data available for ML simulation.")
+            if isinstance(sample_data, pd.DataFrame) and not sample_data.empty:
+                X_sim = sample_data[['amount_usd']]
+                probabilities = model.predict_proba(X_sim)[:, 1]
+                sample_data['fraud_probability'] = probabilities
+                
+                threshold = st.slider("Fraud Probability Threshold (%)", min_value=0, max_value=100, value=50, step=5) / 100.0
+                sample_data['is_blocked'] = sample_data['fraud_probability'] >= threshold
+                
+                caught_fraud = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 1)])
+                missed_fraud = len(sample_data[(sample_data['is_blocked'] == False) & (sample_data['is_fraud_flag'] == 1)])
+                false_positives = len(sample_data[(sample_data['is_blocked'] == True) & (sample_data['is_fraud_flag'] == 0)])
+                
+                col_ml1, col_ml2, col_ml3 = st.columns(3)
+                col_ml1.metric("Fraud Caught", f"{caught_fraud}", delta="Good", delta_color="normal")
+                col_ml2.metric("Fraud Missed", f"{missed_fraud}", delta="Bad", delta_color="inverse")
+                col_ml3.metric("Legit Customers Blocked", f"{false_positives}", delta="False Positives", delta_color="off")
+                
+                fig_ml = px.scatter(
+                    sample_data, x='amount_usd', y='fraud_probability', color='is_blocked', symbol='is_fraud_flag',
+                    title=f"Transaction Amount vs. ML Fraud Probability (Threshold: {threshold*100}%)",
+                    labels={'amount_usd': 'Amount (USD)', 'fraud_probability': 'Fraud Probability', 'is_blocked': 'Blocked by ML'},
+                    color_discrete_map={True: '#D32F2F', False: '#1E3A8A'}
+                )
+                st.plotly_chart(fig_ml, use_container_width=True)
+            else:
+                st.warning("No transaction data available for ML simulation.")
+        except Exception as e:
+            st.warning("Could not run ML simulation.")
     else:
         st.warning("Model file not found. Please run the training script first.")
